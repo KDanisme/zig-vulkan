@@ -1,10 +1,14 @@
 .{ .name = "zig-vulkan", .version = "0.0.0", .dependencies = .{
     .vulkan_zig = .{
-        .url = "https://github.com/Snektron/vulkan-zig/archive/18f38ef2b7ae394734bd8b28d43f120f2b9567c1.tar.gz",
-        .hash = "1220530d62adb3f7ab87bacde31c302955a5803db52e302a0c7f8e107ca03f7aeca5",
+        .url = "https://github.com/Snektron/vulkan-zig/archive/f7b21d034f527765f62935de1b62855033621989.tar.gz",
+        .hash = "12201e484e173e70634e664864763223427703e677f28c63ebec9332513c8ca5121c",
     },
     .vulkan_headers = .{
         .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/c6391a7b8cd57e79ce6b6c832c8e3043c4d9967b.zip",
         .hash = "12205242ac65066ab69593f5f1e67e6c139da5573a08c09e2aeec5a14358813d4881",
+    },
+    .sdl = .{
+        .url = "https://github.com/ikskuh/SDL.zig/archive/38ca4efa99d05431902021df0997f804a6c6d4f3.zip",
+        .hash = "1220dc7b8b63eab7a4184fde897e51f8f1301d8615a0bbb0c9f8f0b693fa38055c4e",
     },
 }, .paths = .{""} }

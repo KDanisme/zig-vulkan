@@ -15,17 +15,18 @@
         config,
         lib,
         system,
+        inputs',
         ...
       }: let
         # Zig flake helper
         # Check the flake.nix in zig2nix project for more options:
         # <https://github.com/Cloudef/zig2nix/blob/master/flake.nix>
-        env = inputs.zig2nix.outputs.zig-env.${system} {zig = pkgs.zigpkgs."master-2024-08-02";};
+        env = inputs.zig2nix.outputs.zig-env.${system} {zig = pkgs.zigpkgs.master;};
         system-triple = env.lib.zigTripleFromString system;
       in rec {
         _module.args.pkgs = import inputs.nixpkgs {
           inherit system;
-          overlays = [inputs.zig.overlays.default];
+          overlays = [inputs.zig-overlay.overlays.default];
         };
 
         pre-commit.settings.hooks.treefmt.enable = true;
@@ -37,8 +38,7 @@
             alejandra.enable = true;
             zig = {
               enable = true;
-
-              package = pkgs.zigpkgs."master-2024-08-02";
+              package = pkgs.zigpkgs.master;
             };
           };
         };
@@ -77,19 +77,31 @@
           inputsfrom = [config.pre-commit.devShell];
           packages = with pkgs; [
             zigpkgs."master-2024-08-02"
-            glfw
+            SDL2
+            SDL2_ttf
+            SDL2_image
             shaderc
             vulkan-headers
             vulkan-loader
             vulkan-tools
-
             vulkan-validation-layers
+
+            pkgconf
             renderdoc # graphics debugger
             tracy # graphics profiler
             vulkan-tools-lunarg #vkconfig
+            inputs'.zls.packages.default
           ];
 
-          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs; [glfw freetype vulkan-loader vulkan-validation-layers]);
+          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs; [
+            SDL2
+            SDL2_ttf
+            SDL2_image
+
+            freetype
+            vulkan-loader
+            vulkan-validation-layers
+          ]);
         };
       };
     };
@@ -106,13 +118,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zig = {
-      url = "github:mitchellh/zig-overlay";
+    zig-overlay = {
+      url = "github:mitchellh/zig-overlay/1f0785c9b064455d5ba78002470f6dfad65de2a8";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     zig2nix = {
       url = "github:Cloudef/zig2nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zls = {
+      url = "github:zigtools/zls";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.zig-overlay.follows = "zig-overlay";
     };
   };
 }

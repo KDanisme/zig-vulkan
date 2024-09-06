@@ -2,11 +2,27 @@ const std = @import("std");
 const vkgen = @import("vulkan_zig");
 const ShaderCompileStep = vkgen.ShaderCompileStep;
 
+const sdl = @import("sdl"); // Replace with the actual name in your build.zig.zon
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = addExecutable(b, target, optimize);
+
+    const sdk = sdl.init(b, .{});
+    // sdk.link(exe, .dynamic, sdl.Library.SDL2); // link SDL2 as a shared library
+    // sdk.link(exe, .dynamic, sdl.Library.SDL2_ttf); // link SDL2 as a shared library
+    exe.linkSystemLibrary("SDL2");
+    exe.linkSystemLibrary("SDL2_ttf");
+
+    const shaderModule = getShaderModule(b);
+    const vkModule = try getVkModule(b);
+
+    exe.root_module.addImport("shaders", shaderModule);
+    exe.root_module.addImport("vulkan-zig", vkModule);
+    exe.root_module.addImport("sdl2", sdk.getWrapperModuleVulkan(vkModule));
+
     addRunStep(b, exe);
     addTestStep(b, target, optimize);
 }
@@ -39,19 +55,11 @@ fn addExecutable(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
         .optimize = optimize,
         .link_libc = true,
     });
-    exe.linkSystemLibrary("glfw");
-    const vk_generate_command = try createVkGenerateCommand(b);
-    exe.root_module.addAnonymousImport("vulkan", .{
-        .root_source_file = vk_generate_command.addOutputFileArg("vk.zig"),
-    });
-
-    const shaderStep = createShaderCompileStep(b);
-    exe.root_module.addImport("shaders", shaderStep.getModule());
 
     b.installArtifact(exe);
     return exe;
 }
-fn createVkGenerateCommand(b: *std.Build) !*std.Build.Step.Run {
+fn getVkModule(b: *std.Build) !*std.Build.Module {
     const maybe_override_registry = b.option([]const u8, "override-registry", "Override the path to the Vulkan registry used for the examples");
     const registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
     const vk_gen = b.dependency("vulkan_zig", .{}).artifact("vulkan-zig-generator");
@@ -61,9 +69,11 @@ fn createVkGenerateCommand(b: *std.Build) !*std.Build.Step.Run {
     } else {
         vk_generate_cmd.addFileArg(registry);
     }
-    return vk_generate_cmd;
+    return b.addModule("vulkan-zig", .{
+        .root_source_file = vk_generate_cmd.addOutputFileArg("vk.zig"),
+    });
 }
-fn createShaderCompileStep(b: *std.Build) *vkgen.ShaderCompileStep {
+fn getShaderModule(b: *std.Build) *std.Build.Module {
     const shaders = ShaderCompileStep.create(
         b,
         .{ .real_path = "glslc" },
@@ -72,5 +82,5 @@ fn createShaderCompileStep(b: *std.Build) *vkgen.ShaderCompileStep {
     );
     shaders.add("triangle_vert", "src/shaders/triangle.vert", .{});
     shaders.add("triangle_frag", "src/shaders/triangle.frag", .{});
-    return shaders;
+    return shaders.getModule();
 }
